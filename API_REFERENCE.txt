@@ -1,0 +1,168 @@
+KILO GATEWAY - API REFERENCE
+=============================
+
+
+BASE URL & API KEY
+------------------
+Base URL  : https://kilogateway.vercel.app/v1
+API Key   : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ
+
+
+DEFAULT MODEL
+-------------
+Model ID  : minimax/minimax-m2.5:free
+Provider  : MiniMax
+Status    : FREE
+
+Kalau mau ganti model, tinggal ganti Model ID di bawah ini.
+Sisanya (Base URL & API Key) tetap sama.
+
+
+CURL CONTOH
+-----------
+curl https://kilogateway.vercel.app/v1/chat/completions \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "minimax/minimax-m2.5:free", "messages": [{"role": "user", "content": "Halo"}], "max_tokens": 200}'
+
+
+PYTHON CONTOH
+-------------
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ",
+    base_url="https://kilogateway.vercel.app/v1"
+)
+
+response = client.chat.completions.create(
+    model="minimax/minimax-m2.5:free",
+    messages=[{"role": "user", "content": "Halo"}]
+)
+
+print(response.choices[0].message.content)
+
+
+NODE.JS CONTOH
+--------------
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+    apiKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ",
+    baseURL: "https://kilogateway.vercel.app/v1"
+});
+
+const response = await client.chat.completions.create({
+    model: "minimax/minimax-m2.5:free",
+    messages: [{ role: "user", content: "Halo" }]
+});
+
+console.log(response.choices[0].message.content);
+
+
+DAFTAR MODEL FREE
+-----------------
+minimax/minimax-m2.5:free
+xiaomi/mimo-v2-pro:free
+xiaomi/mimo-v2-omni:free
+x-ai/grok-code-fast-1:optimized:free
+stepfun/step-3.5-flash:free
+nvidia/nemotron-3-super-120b-a12b:free
+arcee-ai/trinity-large-preview:free
+
+
+DAFTAR MODEL POPULER (BERBAYAR)
+-------------------------------
+anthropic/claude-opus-4
+anthropic/claude-sonnet-4
+anthropic/claude-haiku-4.5
+openai/gpt-5
+openai/gpt-5-mini
+openai/gpt-5.2
+openai/gpt-4o
+openai/o3
+openai/o3-mini
+openai/o4-mini
+google/gemini-2.5-pro
+google/gemini-2.5-flash
+google/gemini-3-flash-preview
+deepseek/deepseek-chat
+deepseek/deepseek-r1
+deepseek/deepseek-v3.2
+qwen/qwen3-coder
+qwen/qwen3-max
+qwen/qwen3-235b-a22b
+x-ai/grok-3
+x-ai/grok-4
+mistralai/mistral-large-2512
+mistralai/codestral-2508
+moonshotai/kimi-k2.5
+z-ai/glm-5
+minimax/minimax-m2.7
+
+
+PENJELASAN: BASE URL FORMAT
+----------------------------
+
+Di OpenAI-compatible API, ada 2 cara penulisan Base URL:
+
+1. BASE URL SAJA (tanpa endpoint)
+   Contoh: https://kilogateway.vercel.app/v1
+
+   Ini cara yang PALING UMUM dipakai.
+   SDK (OpenAI Python, OpenAI Node.js, dll) akan otomatis
+   menambahkan endpoint-nya sendiri:
+   - /v1/chat/completions
+   - /v1/models
+   - /v1/embeddings
+
+   Jadi kalau pakai SDK, cukup tulis Base URL-nya saja.
+
+
+2. BASE URL LENGKAP (dengan endpoint)
+   Contoh: https://kilogateway.vercel.app/v1/chat/completions
+
+   Ini dipakai kalau:
+   - Pakai curl langsung (tanpa SDK)
+   - Platform tertentu yang minta URL lengkap
+   - Testing manual
+
+   Tapi kalau pakai SDK, JANGAN pakai cara ini.
+   SDK akan gagal karena URL-nya sudah ada endpoint-nya.
+
+
+KESIMPULAN:
+-----------
+- Pakai SDK?       -> Gunakan: https://kilogateway.vercel.app/v1
+- Pakai curl?      -> Gunakan: https://kilogateway.vercel.app/v1/chat/completions
+- Platform minta?  -> Lihat dokumentasi platform tersebut
+
+Kebanyakan platform (OpenAI, Anthropic, dll) menggunakan format "/v1"
+sebagai Base URL, dan SDK akan menangani sisanya.
+
+
+ENDPOINT YANG TERSEDIA
+-----------------------
+GET  /health                    -> Cek status server
+GET  /v1/models                 -> Daftar semua model
+POST /v1/chat/completions       -> Kirim pesan ke AI
+
+
+STATUS CODE ERROR
+-----------------
+401 -> API Key salah atau tidak ada
+400 -> Format request salah
+404 -> Model tidak ditemukan
+500 -> Error di server
+504 -> Timeout (terlalu lama)
+
+
+TIPS
+----
+1. Gunakan model FREE untuk testing dan development
+2. Gunakan model BERBAYAR untuk production
+3. Set max_tokens sesuai kebutuhan (hemat token = hemat biaya)
+4. Streaming (stream: true) untuk response yang panjang
+5. Temperature 0.7 untuk hasil yang seimbang
+6. Temperature 0 untuk hasil yang konsisten
+7. Temperature 1 untuk hasil yang kreatif
