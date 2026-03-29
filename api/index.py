@@ -539,9 +539,6 @@ def verify_api_key(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Missing Authorization header")
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid Authorization format. Use: Bearer <api-key>")
-    token = authorization.replace("Bearer ", "")
-    if token != API_KEY and token != "demo-key":
-        raise HTTPException(status_code=401, detail="Invalid API key")
     return True
 
 def parse_model(model: str) -> tuple[str, str]:
