@@ -90,9 +90,9 @@ HTML_DASHBOARD = """<!DOCTYPE html>
                 </optgroup>
             </select>
             <label>Input Prompt</label>
-            <textarea id="prompt-input" oninput="updateCurl()">apa itu UTBK?</textarea>
+            <textarea id="prompt-input" oninput="updateCurl()">hi</textarea>
             <label>Max Tokens</label>
-            <input type="number" id="max-tokens" value="200" oninput="updateCurl()">
+            <input type="number" id="max-tokens" value="190000" oninput="updateCurl()">
             <label>cURL Command</label>
             <textarea id="curl-output" readonly></textarea>
             <button class="btn" onclick="copyText('curl-output')">Copy cURL</button>
@@ -141,11 +141,31 @@ HTML_DASHBOARD = """<!DOCTYPE html>
         function updateCurl() {
             const model = document.getElementById('model-select').value || "minimax/minimax-m2.5:free";
             const prompt = document.getElementById('prompt-input').value || "Hello";
-            const tokens = document.getElementById('max-tokens').value || "200";
-            const escaped = prompt.replace(/'/g, "\\\\'").replace(/"/g, '\\\\"');
-            document.getElementById('curl-output').value = "curl " + BASE + "/chat/completions \\\\\\n  -H \\"Authorization: Bearer " + API_KEY + "\\" \\\\\\n  -H \\"Content-Type: application/json\\" \\\\\\n  -d '{\\"model\\": \\"" + model + "\\", \\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"" + escaped + "\\"}], \\"max_tokens\\": " + tokens + "}'";
-            document.getElementById('curl-stream').value = "curl " + BASE + "/chat/completions \\\\\\n  -H \\"Authorization: Bearer " + API_KEY + "\\" \\\\\\n  -H \\"Content-Type: application/json\\" \\\\\\n  -d '{\\"model\\": \\"" + model + "\\", \\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"" + escaped + "\\"}], \\"stream\\": true}'";
-            document.getElementById('python-code').value = "from openai import OpenAI\\\\n\\\\nclient = OpenAI(\\\\n    api_key=\\"" + API_KEY + "\\",\\\\n    base_url=\\"" + BASE + "\\"\\\\n)\\\\n\\\\nresponse = client.chat.completions.create(\\\\n    model=\\"" + model + "\\",\\\\n    messages=[{\\"role\\": \\"user\\", \\"content\\": \\"" + escaped + "\\"}]\\\\n)\\\\nprint(response.choices[0].message.content)";
+            const tokens = document.getElementById('max-tokens').value || "190000";
+            const escaped = prompt.replace(/'/g, "\\'").replace(/"/g, '\\"');
+            const curlCmd = `curl ${BASE}/chat/completions \\
+  -H "Authorization: Bearer ${API_KEY}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model": "${model}", "messages": [{"role": "user", "content": "${escaped}"}], "max_tokens": ${tokens}}'`;
+            const curlStream = `curl ${BASE}/chat/completions \\
+  -H "Authorization: Bearer ${API_KEY}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model": "${model}", "messages": [{"role": "user", "content": "${escaped}"}], "stream": true}'`;
+            const pythonCode = `from openai import OpenAI
+
+client = OpenAI(
+    api_key="${API_KEY}",
+    base_url="${BASE}"
+)
+
+response = client.chat.completions.create(
+    model="${model}",
+    messages=[{"role": "user", "content": "${escaped}"}]
+)
+print(response.choices[0].message.content)`;
+            document.getElementById('curl-output').value = curlCmd;
+            document.getElementById('curl-stream').value = curlStream;
+            document.getElementById('python-code').value = pythonCode;
         }
         function copyText(id) {
             navigator.clipboard.writeText(document.getElementById(id).value);
@@ -156,7 +176,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
         function testCurl() {
             const model = document.getElementById('model-select').value || "minimax/minimax-m2.5:free";
             const prompt = document.getElementById('prompt-input').value || "Hello";
-            const tokens = document.getElementById('max-tokens').value || "200";
+            const tokens = document.getElementById('max-tokens').value || "190000";
             const responseArea = document.getElementById('curl-response');
             responseArea.value = "Loading...";
             fetch(BASE + "/chat/completions", {
