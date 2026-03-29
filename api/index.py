@@ -24,6 +24,125 @@ import httpx
 API_KEY = os.getenv("KILOCODE_API_KEY", "demo-key")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
+HTML_DASHBOARD = """<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kilo Gateway - API Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 30px; color: #00d4ff; }
+        .card { background: #1a1a2e; border-radius: 12px; padding: 24px; margin-bottom: 20px; border: 1px solid #333; }
+        .card h2 { margin-bottom: 16px; color: #00d4ff; font-size: 18px; }
+        label { display: block; margin-bottom: 8px; color: #aaa; font-size: 14px; }
+        select, textarea, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1a; color: #fff; font-size: 14px; margin-bottom: 12px; }
+        select:focus, textarea:focus, input:focus { outline: none; border-color: #00d4ff; }
+        textarea { resize: vertical; min-height: 120px; font-family: 'Courier New', monospace; font-size: 13px; }
+        .btn { background: #00d4ff; color: #000; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-right: 10px; margin-top: 10px; }
+        .btn:hover { background: #00b8e6; }
+        .btn-secondary { background: #333; color: #fff; }
+        .info { background: #1a1a2e; border-left: 4px solid #00d4ff; padding: 16px; margin-bottom: 20px; border-radius: 8px; }
+        .info p { margin-bottom: 8px; font-size: 14px; }
+        .info strong { color: #00d4ff; }
+        .copy-msg { color: #00ff88; font-size: 12px; margin-top: 8px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kilo Gateway</h1>
+        <div class="info">
+            <p><strong>Base URL:</strong> <span>https://kilogateway.vercel.app/v1</span></p>
+            <p><strong>API Key:</strong> <span style="word-break: break-all;">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ</span></p>
+            <p><strong>Status:</strong> Active</p>
+        </div>
+        <div class="card">
+            <h2>Copy cURL Command</h2>
+            <label>Pilih Model</label>
+            <select id="model-select" onchange="updateCurl()">
+                <optgroup label="FREE Models">
+                    <option value="minimax/minimax-m2.5:free" selected>MiniMax M2.5 (Free)</option>
+                    <option value="xiaomi/mimo-v2-pro:free">Xiaomi MiMo V2 Pro (Free)</option>
+                    <option value="xiaomi/mimo-v2-omni:free">Xiaomi MiMo V2 Omni (Free)</option>
+                    <option value="x-ai/grok-code-fast-1:optimized:free">Grok Code Fast 1 (Free)</option>
+                    <option value="stepfun/step-3.5-flash:free">StepFun 3.5 Flash (Free)</option>
+                    <option value="nvidia/nemotron-3-super-120b-a12b:free">NVIDIA Nemotron 3 Super (Free)</option>
+                    <option value="arcee-ai/trinity-large-preview:free">Arcee Trinity Large (Free)</option>
+                </optgroup>
+                <optgroup label="Popular Models">
+                    <option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
+                    <option value="anthropic/claude-opus-4">Claude Opus 4</option>
+                    <option value="openai/gpt-5">GPT-5</option>
+                    <option value="openai/gpt-5-mini">GPT-5 Mini</option>
+                    <option value="openai/gpt-4o">GPT-4o</option>
+                    <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+                    <option value="deepseek/deepseek-chat">DeepSeek Chat</option>
+                    <option value="qwen/qwen3-coder">Qwen3 Coder</option>
+                    <option value="x-ai/grok-3">Grok 3</option>
+                    <option value="moonshotai/kimi-k2.5">Kimi K2.5</option>
+                    <option value="z-ai/glm-5">GLM 5</option>
+                </optgroup>
+            </select>
+            <label>Input Prompt</label>
+            <textarea id="prompt-input" oninput="updateCurl()">apa itu UTBK?</textarea>
+            <label>Max Tokens</label>
+            <input type="number" id="max-tokens" value="200" oninput="updateCurl()">
+            <label>cURL Command</label>
+            <textarea id="curl-output" readonly></textarea>
+            <button class="btn" onclick="copyText('curl-output')">Copy cURL</button>
+            <button class="btn btn-secondary" onclick="copyText('curl-stream')">Copy Streaming</button>
+            <button class="btn btn-secondary" onclick="copyText('python-code')">Copy Python</button>
+            <p class="copy-msg" id="copy-msg">Copied!</p>
+        </div>
+        <div class="card">
+            <h2>Streaming cURL</h2>
+            <textarea id="curl-stream" readonly></textarea>
+        </div>
+        <div class="card">
+            <h2>Python Code</h2>
+            <textarea id="python-code" readonly></textarea>
+        </div>
+        <div class="card">
+            <h2>Daftar Model Free</h2>
+            <ul style="list-style: none; line-height: 2;">
+                <li><code>minimax/minimax-m2.5:free</code> - MiniMax M2.5</li>
+                <li><code>xiaomi/mimo-v2-pro:free</code> - Xiaomi MiMo V2 Pro</li>
+                <li><code>xiaomi/mimo-v2-omni:free</code> - Xiaomi MiMo V2 Omni</li>
+                <li><code>x-ai/grok-code-fast-1:optimized:free</code> - Grok Code Fast 1</li>
+                <li><code>stepfun/step-3.5-flash:free</code> - StepFun 3.5 Flash</li>
+                <li><code>nvidia/nemotron-3-super-120b-a12b:free</code> - NVIDIA Nemotron 3 Super</li>
+                <li><code>arcee-ai/trinity-large-preview:free</code> - Arcee Trinity Large</li>
+            </ul>
+        </div>
+        <footer style="text-align: center; color: #666; margin-top: 40px; padding: 20px;">
+            <p>Kilo Gateway API | <a href="/health" style="color: #00d4ff;">Health Check</a> | <a href="/v1/models" style="color: #00d4ff;">All Models</a></p>
+        </footer>
+    </div>
+    <script>
+        const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
+        const BASE = "https://kilogateway.vercel.app/v1";
+        function updateCurl() {
+            const model = document.getElementById('model-select').value || "minimax/minimax-m2.5:free";
+            const prompt = document.getElementById('prompt-input').value || "Hello";
+            const tokens = document.getElementById('max-tokens').value || "200";
+            const escaped = prompt.replace(/'/g, "\\\\'").replace(/"/g, '\\\\"');
+            document.getElementById('curl-output').value = "curl " + BASE + "/chat/completions \\\\\\n  -H \\"Authorization: Bearer " + API_KEY + "\\" \\\\\\n  -H \\"Content-Type: application/json\\" \\\\\\n  -d '{\\"model\\": \\"" + model + "\\", \\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"" + escaped + "\\"}], \\"max_tokens\\": " + tokens + "}'";
+            document.getElementById('curl-stream').value = "curl " + BASE + "/chat/completions \\\\\\n  -H \\"Authorization: Bearer " + API_KEY + "\\" \\\\\\n  -H \\"Content-Type: application/json\\" \\\\\\n  -d '{\\"model\\": \\"" + model + "\\", \\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"" + escaped + "\\"}], \\"stream\\": true}'";
+            document.getElementById('python-code').value = "from openai import OpenAI\\\\n\\\\nclient = OpenAI(\\\\n    api_key=\\"" + API_KEY + "\\",\\\\n    base_url=\\"" + BASE + "\\"\\\\n)\\\\n\\\\nresponse = client.chat.completions.create(\\\\n    model=\\"" + model + "\\",\\\\n    messages=[{\\"role\\": \\"user\\", \\"content\\": \\"" + escaped + "\\"}]\\\\n)\\\\nprint(response.choices[0].message.content)";
+        }
+        function copyText(id) {
+            navigator.clipboard.writeText(document.getElementById(id).value);
+            const msg = document.getElementById('copy-msg');
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 2000);
+        }
+        updateCurl();
+    </script>
+</body>
+</html>"""
+
 # ============================================================================
 # Models
 # ============================================================================
@@ -556,19 +675,7 @@ def parse_model(model: str) -> tuple[str, str]:
 
 @app.get("/")
 async def root():
-    try:
-        with open("public/index.html", "r") as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content, status_code=200)
-    except FileNotFoundError:
-        return {
-            "status": "ok",
-            "service": "Kilo Gateway",
-            "version": "1.0.0",
-            "total_models": len(AVAILABLE_MODELS),
-            "free_models": sum(1 for m in AVAILABLE_MODELS if m.get("free")),
-            "docs": "/docs"
-        }
+    return HTMLResponse(content=HTML_DASHBOARD, status_code=200)
 
 @app.get("/health")
 async def health():
