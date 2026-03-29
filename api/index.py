@@ -136,27 +136,25 @@ HTML_DASHBOARD = """<!DOCTYPE html>
         </footer>
     </div>
     <script>
+var API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
+var BASE_URL = "https://kilogateway.vercel.app/v1";
 function updateCurl() {
     var model = document.getElementById("model-select").value || "minimax/minimax-m2.5:free";
     var prompt = document.getElementById("prompt-input").value || "hi";
     var tokens = document.getElementById("max-tokens").value || "65536";
-    var apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
-    var base = "https://kilogateway.vercel.app/v1";
-    var curlCmd = "curl " + base + "/chat/completions -H 'Authorization: Bearer " + apiKey + "' -H 'Content-Type: application/json' -d '{\"model\": \"" + model + "\", \"messages\": [{\"role\": \"user\", \"content\": \"" + prompt + "\"}], \"max_tokens\": " + tokens + "}'";
-    var curlStream = "curl " + base + "/chat/completions -H 'Authorization: Bearer " + apiKey + "' -H 'Content-Type: application/json' -d '{\"model\": \"" + model + "\", \"messages\": [{\"role\": \"user\", \"content\": \"" + prompt + "\"}], \"stream\": true}'";
-    var pythonCode = "from openai import OpenAI\n\nclient = OpenAI(\n    api_key='" + apiKey + "',\n    base_url='" + base + "'\n)\n\nresponse = client.chat.completions.create(\n    model='" + model + "',\n    messages=[{'role': 'user', 'content': '" + prompt + "'}]\n)\nprint(response.choices[0].message.content)";
+    var bodyData = JSON.stringify({model: model, messages: [{role: "user", content: prompt}], max_tokens: parseInt(tokens)});
+    var bodyStream = JSON.stringify({model: model, messages: [{role: "user", content: prompt}], stream: true});
+    var curlCmd = "curl " + BASE_URL + "/chat/completions \n  -H 'Authorization: Bearer " + API_KEY + "' \n  -H 'Content-Type: application/json' \n  -d '" + bodyData + "'";
+    var curlStream = "curl " + BASE_URL + "/chat/completions \n  -H 'Authorization: Bearer " + API_KEY + "' \n  -H 'Content-Type: application/json' \n  -d '" + bodyStream + "'";
+    var pythonCode = "from openai import OpenAI\n\nclient = OpenAI(\n    api_key='" + API_KEY + "',\n    base_url='" + BASE_URL + "'\n)\n\nresponse = client.chat.completions.create(\n    model='" + model + "',\n    messages=[{'role': 'user', 'content': '" + prompt.replace(/'/g, "\\'") + "'}]\n)\nprint(response.choices[0].message.content)";
     document.getElementById("curl-output").value = curlCmd;
     document.getElementById("curl-stream").value = curlStream;
     document.getElementById("python-code").value = pythonCode;
 }
 function copyText(id) {
-    var text = document.getElementById(id).value;
-    var textarea = document.createElement("textarea");
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
+    var el = document.getElementById(id);
+    el.select();
     document.execCommand("copy");
-    document.body.removeChild(textarea);
     var msg = document.getElementById("copy-msg");
     msg.style.display = "block";
     setTimeout(function() { msg.style.display = "none"; }, 2000);
@@ -165,40 +163,28 @@ function testCurl() {
     var model = document.getElementById("model-select").value || "minimax/minimax-m2.5:free";
     var prompt = document.getElementById("prompt-input").value || "hi";
     var tokens = document.getElementById("max-tokens").value || "65536";
-    var apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
     var responseArea = document.getElementById("curl-response");
     responseArea.value = "Loading...";
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "https://kilogateway.vercel.app/v1/chat/completions", true);
+    xhr.open("POST", BASE_URL + "/chat/completions", true);
     xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.setRequestHeader("Authorization", "Bearer " + apiKey);
-    var requestData = {
-        model: model,
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: parseInt(tokens)
-    };
+    xhr.setRequestHeader("Authorization", "Bearer " + API_KEY);
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    responseArea.value = JSON.stringify(data, null, 2);
-                    var content = "";
-                    if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-                        content = data.choices[0].message.content;
-                    } else {
-                        content = "No content found";
-                    }
-                    document.getElementById("content-output").innerHTML = content.replace(/\n/g, "<br>");
-                } catch (e) {
-                    responseArea.value = "Error: " + e.message;
+                var data = JSON.parse(xhr.responseText);
+                responseArea.value = JSON.stringify(data, null, 2);
+                var content = "";
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    content = data.choices[0].message.content || "No content";
                 }
+                document.getElementById("content-output").innerHTML = content.replace(/\n/g, "<br>");
             } else {
-                responseArea.value = "Error: " + xhr.status;
+                responseArea.value = "Error " + xhr.status + ": " + xhr.responseText;
             }
         }
     };
-    xhr.send(JSON.stringify(requestData));
+    xhr.send(JSON.stringify({model: model, messages: [{role: "user", content: prompt}], max_tokens: parseInt(tokens)}));
 }
 function clearResponse() {
     document.getElementById("curl-response").value = "";
@@ -763,6 +749,15 @@ async def list_models(authorization: Optional[str] = Header(None)):
         ]
     }
 
+
+def normalize_tool_call_response(result: Dict) -> Dict:
+    for choice in result.get("choices", []):
+        msg = choice.get("message", {})
+        if msg.get("tool_calls") and msg.get("content") is None:
+            msg["content"] = ""
+    return result
+
+
 @app.post("/v1/chat/completions")
 async def chat_completions(
     request: ChatCompletionRequest,
@@ -808,7 +803,9 @@ async def chat_completions(
                     }
                 )
             
-            return response.json()
+            result = response.json()
+            result = normalize_tool_call_response(result)
+            return result
             
         except httpx.TimeoutException:
             raise HTTPException(status_code=504, detail="Request timeout")
