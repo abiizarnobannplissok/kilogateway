@@ -138,7 +138,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
     <script>
 var API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
 var BASE_URL = "https://kilogateway.vercel.app/v1";
-var NL = "\n";
+var NL = String.fromCharCode(10);
 function updateCurl() {
     var model = document.getElementById("model-select").value || "minimax/minimax-m2.5:free";
     var prompt = document.getElementById("prompt-input").value || "hi";
@@ -768,6 +768,21 @@ async def chat_completions(
     api_key = verify_api_key(authorization)
     provider, actual_model = parse_model(request.model)
     
+    # Build messages with proper tool handling
+    messages = []
+    for m in request.messages:
+        if m.role == "tool":
+            messages.append({
+                "role": "tool",
+                "tool_call_id": getattr(m, 'tool_call_id', None),
+                "content": m.content
+            })
+        else:
+            msg_dict = {"role": m.role, "content": m.content}
+            if getattr(m, 'name', None):
+                msg_dict["name"] = m.name
+            messages.append(msg_dict)
+    
     # Call real Kilo Gateway API
     async with httpx.AsyncClient() as client:
         try:
@@ -779,7 +794,7 @@ async def chat_completions(
                 },
                 json={
                     "model": request.model,
-                    "messages": [{"role": m.role, "content": m.content} for m in request.messages],
+                    "messages": messages,
                     "max_tokens": request.max_tokens,
                     "temperature": request.temperature,
                     "stream": request.stream,
