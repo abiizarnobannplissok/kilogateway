@@ -179,7 +179,7 @@ function testCurl() {
                 if (data.choices && data.choices[0] && data.choices[0].message) {
                     content = data.choices[0].message.content || "No content";
                 }
-                document.getElementById("content-output").innerHTML = content.replace(/\n/g, "<br>");
+                document.getElementById("content-output").innerHTML = content.split(String.fromCharCode(10)).join("<br>");
             } else {
                 responseArea.value = "Error " + xhr.status + ": " + xhr.responseText;
             }
@@ -204,6 +204,7 @@ class Message(BaseModel):
     role: str
     content: str
     name: Optional[str] = None
+    tool_call_id: Optional[str] = None
 
 class ChatCompletionRequest(BaseModel):
     model: str
