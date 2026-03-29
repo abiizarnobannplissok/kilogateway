@@ -136,48 +136,37 @@ HTML_DASHBOARD = """<!DOCTYPE html>
         </footer>
     </div>
     <script>
-        const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
-        const BASE = "https://kilogateway.vercel.app/v1";
+        var API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
+        var BASE = "https://kilogateway.vercel.app/v1";
         function updateCurl() {
-            const model = document.getElementById('model-select').value || "minimax/minimax-m2.5:free";
-            const prompt = document.getElementById('prompt-input').value || "Hello";
-            const tokens = document.getElementById('max-tokens').value || "65536";
-            const escaped = prompt.replace(/'/g, "\\u0027").replace(/"/g, "\\u0022");
-            const curlCmd = `curl ${BASE}/chat/completions \\
-  -H "Authorization: Bearer ${API_KEY}" \\
-  -H "Content-Type: application/json" \\
-  -d '{"model": "${model}", "messages": [{"role": "user", "content": "${escaped}"}], "max_tokens": ${tokens}}'`;
-            const curlStream = `curl ${BASE}/chat/completions \\
-  -H "Authorization: Bearer ${API_KEY}" \\
-  -H "Content-Type: application/json" \\
-  -d '{"model": "${model}", "messages": [{"role": "user", "content": "${escaped}"}], "stream": true}'`;
-            const pythonCode = `from openai import OpenAI
-
-client = OpenAI(
-    api_key="${API_KEY}",
-    base_url="${BASE}"
-)
-
-response = client.chat.completions.create(
-    model="${model}",
-    messages=[{"role": "user", "content": "${escaped}"}]
-)
-print(response.choices[0].message.content)`;
-            document.getElementById('curl-output').value = curlCmd;
-            document.getElementById('curl-stream').value = curlStream;
-            document.getElementById('python-code').value = pythonCode;
+            var modelEl = document.getElementById("model-select");
+            var promptEl = document.getElementById("prompt-input");
+            var tokensEl = document.getElementById("max-tokens");
+            var model = modelEl.value || "minimax/minimax-m2.5:free";
+            var prompt = promptEl.value || "Hello";
+            var tokens = tokensEl.value || "65536";
+            var escaped = prompt;
+            var curlCmd = "curl " + BASE + "/chat/completions -H \"Authorization: Bearer " + API_KEY + "\" -H \"Content-Type: application/json\" -d '{\"model\": \"" + model + "\", \"messages\": [{\"role\": \"user\", \"content\": \"" + escaped + "\"}], \"max_tokens\": " + tokens + "}'";
+            var curlStream = "curl " + BASE + "/chat/completions -H \"Authorization: Bearer " + API_KEY + "\" -H \"Content-Type: application/json\" -d '{\"model\": \"" + model + "\", \"messages\": [{\"role\": \"user\", \"content\": \"" + escaped + "\"}], \"stream\": true}'";
+            var pythonCode = "from openai import OpenAI\n\nclient = OpenAI(\n    api_key=\"" + API_KEY + "\",\n    base_url=\"" + BASE + "\"\n)\n\nresponse = client.chat.completions.create(\n    model=\"" + model + "\",\n    messages=[{\"role\": \"user\", \"content\": \"" + escaped + "\"}]\n)\nprint(response.choices[0].message.content)";
+            document.getElementById("curl-output").value = curlCmd;
+            document.getElementById("curl-stream").value = curlStream;
+            document.getElementById("python-code").value = pythonCode;
         }
         function copyText(id) {
             navigator.clipboard.writeText(document.getElementById(id).value);
-            const msg = document.getElementById('copy-msg');
-            msg.style.display = 'block';
-            setTimeout(() => msg.style.display = 'none', 2000);
+            var msg = document.getElementById("copy-msg");
+            msg.style.display = "block";
+            setTimeout(function() { msg.style.display = "none"; }, 2000);
         }
         function testCurl() {
-            const model = document.getElementById('model-select').value || "minimax/minimax-m2.5:free";
-            const prompt = document.getElementById('prompt-input').value || "Hello";
-            const tokens = document.getElementById('max-tokens').value || "65536";
-            const responseArea = document.getElementById('curl-response');
+            var modelEl = document.getElementById("model-select");
+            var promptEl = document.getElementById("prompt-input");
+            var tokensEl = document.getElementById("max-tokens");
+            var model = modelEl.value || "minimax/minimax-m2.5:free";
+            var prompt = promptEl.value || "Hello";
+            var tokens = tokensEl.value || "65536";
+            var responseArea = document.getElementById("curl-response");
             responseArea.value = "Loading...";
             fetch(BASE + "/chat/completions", {
                 method: "POST",
@@ -191,11 +180,10 @@ print(response.choices[0].message.content)`;
                     max_tokens: parseInt(tokens)
                 })
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
                 responseArea.value = JSON.stringify(data, null, 2);
-                
-                let content = "";
+                var content = "";
                 try {
                     if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
                         content = data.choices[0].message.content;
@@ -205,31 +193,23 @@ print(response.choices[0].message.content)`;
                 } catch (e) {
                     content = "Error parsing content: " + e.message;
                 }
-                
-                const contentOutput = document.getElementById('content-output');
+                var contentOutput = document.getElementById("content-output");
                 contentOutput.innerHTML = formatContent(content);
             })
-            .catch(error => {
+            .catch(function(error) {
                 responseArea.value = "Error: " + error.message;
-                document.getElementById('content-output').innerHTML = "Error: " + error.message;
+                document.getElementById("content-output").innerHTML = "Error: " + error.message;
             });
         }
         function formatContent(text) {
-            let html = text
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/`(.*?)`/g, '<code>$1</code>')
-                .replace(/\n/g, '<br>');
+            var html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\*(.*?)\*/g, "<em>$1</em>").replace(/`(.*?)`/g, "<code>$1</code>").replace(/\n/g, "<br>");
             return html;
         }
         function clearResponse() {
-            document.getElementById('curl-response').value = "";
-            document.getElementById('content-output').innerHTML = "Klik 'Test cURL' untuk melihat konten...";
+            document.getElementById("curl-response").value = "";
+            document.getElementById("content-output").innerHTML = "Klik 'Test cURL' untuk melihat konten...";
         }
-        updateCurl();
+        window.onload = function() { updateCurl(); };
     </script>
 </body>
 </html>"""
