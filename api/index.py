@@ -136,19 +136,21 @@ HTML_DASHBOARD = """<!DOCTYPE html>
         </footer>
     </div>
     <script>
-        var API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
-        var BASE = "https://kilogateway.vercel.app/v1";
         function updateCurl() {
-            var modelEl = document.getElementById("model-select");
-            var promptEl = document.getElementById("prompt-input");
-            var tokensEl = document.getElementById("max-tokens");
-            var model = modelEl.value || "minimax/minimax-m2.5:free";
-            var prompt = promptEl.value || "Hello";
-            var tokens = tokensEl.value || "65536";
-            var escaped = prompt;
-            var curlCmd = "curl " + BASE + "/chat/completions -H \"Authorization: Bearer " + API_KEY + "\" -H \"Content-Type: application/json\" -d '{\"model\": \"" + model + "\", \"messages\": [{\"role\": \"user\", \"content\": \"" + escaped + "\"}], \"max_tokens\": " + tokens + "}'";
-            var curlStream = "curl " + BASE + "/chat/completions -H \"Authorization: Bearer " + API_KEY + "\" -H \"Content-Type: application/json\" -d '{\"model\": \"" + model + "\", \"messages\": [{\"role\": \"user\", \"content\": \"" + escaped + "\"}], \"stream\": true}'";
-            var pythonCode = "from openai import OpenAI\n\nclient = OpenAI(\n    api_key=\"" + API_KEY + "\",\n    base_url=\"" + BASE + "\"\n)\n\nresponse = client.chat.completions.create(\n    model=\"" + model + "\",\n    messages=[{\"role\": \"user\", \"content\": \"" + escaped + "\"}]\n)\nprint(response.choices[0].message.content)";
+            var model = document.getElementById("model-select").value;
+            if (!model) model = "minimax/minimax-m2.5:free";
+            var prompt = document.getElementById("prompt-input").value;
+            if (!prompt) prompt = "hi";
+            var tokens = document.getElementById("max-tokens").value;
+            if (!tokens) tokens = "65536";
+            
+            var dataJson = "{\\"model\\": \\"" + model + "\\", \\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"" + prompt + "\\"}], \\"max_tokens\\": " + tokens + "}";
+            var streamJson = "{\\"model\\": \\"" + model + "\\", \\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"" + prompt + "\\"}], \\"stream\\": true}";
+            
+            var curlCmd = "curl https://kilogateway.vercel.app/v1/chat/completions -H \\"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ\\" -H \\"Content-Type: application/json\\" -d '" + dataJson + "'";
+            var curlStream = "curl https://kilogateway.vercel.app/v1/chat/completions -H \\"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ\\" -H \\"Content-Type: application/json\\" -d '" + streamJson + "'";
+            var pythonCode = "from openai import OpenAI\\n\\nclient = OpenAI(\\n    api_key=\\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ\\",\\n    base_url=\\"https://kilogateway.vercel.app/v1\\"\\n)\\n\\nresponse = client.chat.completions.create(\\n    model=\\"" + model + "\\",\\n    messages=[{\\"role\\": \\"user\\", \\"content\\": \\"" + prompt + "\\"}]\\n)\\nprint(response.choices[0].message.content)";
+            
             document.getElementById("curl-output").value = curlCmd;
             document.getElementById("curl-stream").value = curlStream;
             document.getElementById("python-code").value = pythonCode;
@@ -160,46 +162,53 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             setTimeout(function() { msg.style.display = "none"; }, 2000);
         }
         function testCurl() {
-            var modelEl = document.getElementById("model-select");
-            var promptEl = document.getElementById("prompt-input");
-            var tokensEl = document.getElementById("max-tokens");
-            var model = modelEl.value || "minimax/minimax-m2.5:free";
-            var prompt = promptEl.value || "Hello";
-            var tokens = tokensEl.value || "65536";
+            var model = document.getElementById("model-select").value;
+            if (!model) model = "minimax/minimax-m2.5:free";
+            var prompt = document.getElementById("prompt-input").value;
+            if (!prompt) prompt = "hi";
+            var tokens = document.getElementById("max-tokens").value;
+            if (!tokens) tokens = "65536";
+            
             var responseArea = document.getElementById("curl-response");
             responseArea.value = "Loading...";
-            fetch(BASE + "/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Authorization": "Bearer " + API_KEY,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [{ role: "user", content: prompt }],
-                    max_tokens: parseInt(tokens)
-                })
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                responseArea.value = JSON.stringify(data, null, 2);
-                var content = "";
-                try {
-                    if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-                        content = data.choices[0].message.content;
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "https://kilogateway.vercel.app/v1/chat/completions", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.setRequestHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ");
+            
+            var requestData = {
+                model: model,
+                messages: [{ role: "user", content: prompt }],
+                max_tokens: parseInt(tokens)
+            };
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            responseArea.value = JSON.stringify(data, null, 2);
+                            var content = "";
+                            if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+                                content = data.choices[0].message.content;
+                            } else {
+                                content = "No content found in response";
+                            }
+                            var contentOutput = document.getElementById("content-output");
+                            contentOutput.innerHTML = formatContent(content);
+                        } catch (e) {
+                            responseArea.value = "Error parsing: " + e.message;
+                            document.getElementById("content-output").innerHTML = "Error: " + e.message;
+                        }
                     } else {
-                        content = "No content found in response";
+                        responseArea.value = "Error: " + xhr.status + " " + xhr.statusText;
+                        document.getElementById("content-output").innerHTML = "Error: " + xhr.status + " " + xhr.statusText;
                     }
-                } catch (e) {
-                    content = "Error parsing content: " + e.message;
                 }
-                var contentOutput = document.getElementById("content-output");
-                contentOutput.innerHTML = formatContent(content);
-            })
-            .catch(function(error) {
-                responseArea.value = "Error: " + error.message;
-                document.getElementById("content-output").innerHTML = "Error: " + error.message;
-            });
+            };
+            
+            xhr.send(JSON.stringify(requestData));
         }
         function formatContent(text) {
             if (!text) return "";
@@ -207,9 +216,6 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             html = html.replace(/&/g, "&amp;");
             html = html.replace(/</g, "&lt;");
             html = html.replace(/>/g, "&gt;");
-            html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-            html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
-            html = html.replace(/`(.*?)`/g, "<code>$1</code>");
             html = html.replace(/\n/g, "<br>");
             return html;
         }
@@ -794,17 +800,15 @@ async def chat_completions(
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json"
                 },
-                json_payload={
+                json={
                     "model": request.model,
                     "messages": [{"role": m.role, "content": m.content} for m in request.messages],
                     "max_tokens": request.max_tokens,
                     "temperature": request.temperature,
-                    "stream": request.stream
-                }
-                if request.tools:
-                    json_payload["tools"] = request.tools
-                if request.tool_choice:
-                    json_payload["tool_choice"] = request.tool_choice
+                    "stream": request.stream,
+                    **({"tools": request.tools} if request.tools else {}),
+                    **({"tool_choice": request.tool_choice} if request.tool_choice else {})
+                },
                 timeout=60.0
             )
             
