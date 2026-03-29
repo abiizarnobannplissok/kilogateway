@@ -13,7 +13,7 @@ import json
 from datetime import datetime
 from typing import List, Optional, Dict, Any, Generator
 from fastapi import FastAPI, HTTPException, Header, Request
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, HTMLResponse
 from pydantic import BaseModel, Field
 import httpx
 
@@ -556,14 +556,19 @@ def parse_model(model: str) -> tuple[str, str]:
 
 @app.get("/")
 async def root():
-    return {
-        "status": "ok",
-        "service": "Kilo Gateway",
-        "version": "1.0.0",
-        "total_models": len(AVAILABLE_MODELS),
-        "free_models": sum(1 for m in AVAILABLE_MODELS if m.get("free")),
-        "docs": "/docs"
-    }
+    try:
+        with open("public/index.html", "r") as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content, status_code=200)
+    except FileNotFoundError:
+        return {
+            "status": "ok",
+            "service": "Kilo Gateway",
+            "version": "1.0.0",
+            "total_models": len(AVAILABLE_MODELS),
+            "free_models": sum(1 for m in AVAILABLE_MODELS if m.get("free")),
+            "docs": "/docs"
+        }
 
 @app.get("/health")
 async def health():

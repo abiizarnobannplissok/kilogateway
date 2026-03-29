@@ -8,18 +8,8 @@
   ],
   "routes": [
     {
-      "src": "/v1/(.*)",
+      "src": "/(.*)",
       "dest": "api/index.py"
-    },
-    {
-      "src": "/health",
-      "dest": "api/index.py"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/public/index.html"
     }
   ],
   "public": true
