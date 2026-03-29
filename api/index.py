@@ -135,7 +135,77 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             <p>Kilo Gateway API | <a href="/health" style="color: #00d4ff;">Health Check</a> | <a href="/v1/models" style="color: #00d4ff;">All Models</a></p>
         </footer>
     </div>
-    <script src="/dashboard.js"></script>
+    <script>
+function updateCurl() {
+    var model = document.getElementById("model-select").value || "minimax/minimax-m2.5:free";
+    var prompt = document.getElementById("prompt-input").value || "hi";
+    var tokens = document.getElementById("max-tokens").value || "65536";
+    var apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
+    var base = "https://kilogateway.vercel.app/v1";
+    var curlCmd = "curl " + base + "/chat/completions -H 'Authorization: Bearer " + apiKey + "' -H 'Content-Type: application/json' -d '{\"model\": \"" + model + "\", \"messages\": [{\"role\": \"user\", \"content\": \"" + prompt + "\"}], \"max_tokens\": " + tokens + "}'";
+    var curlStream = "curl " + base + "/chat/completions -H 'Authorization: Bearer " + apiKey + "' -H 'Content-Type: application/json' -d '{\"model\": \"" + model + "\", \"messages\": [{\"role\": \"user\", \"content\": \"" + prompt + "\"}], \"stream\": true}'";
+    var pythonCode = "from openai import OpenAI\n\nclient = OpenAI(\n    api_key='" + apiKey + "',\n    base_url='" + base + "'\n)\n\nresponse = client.chat.completions.create(\n    model='" + model + "',\n    messages=[{'role': 'user', 'content': '" + prompt + "'}]\n)\nprint(response.choices[0].message.content)";
+    document.getElementById("curl-output").value = curlCmd;
+    document.getElementById("curl-stream").value = curlStream;
+    document.getElementById("python-code").value = pythonCode;
+}
+function copyText(id) {
+    var text = document.getElementById(id).value;
+    var textarea = document.createElement("textarea");
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    var msg = document.getElementById("copy-msg");
+    msg.style.display = "block";
+    setTimeout(function() { msg.style.display = "none"; }, 2000);
+}
+function testCurl() {
+    var model = document.getElementById("model-select").value || "minimax/minimax-m2.5:free";
+    var prompt = document.getElementById("prompt-input").value || "hi";
+    var tokens = document.getElementById("max-tokens").value || "65536";
+    var apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
+    var responseArea = document.getElementById("curl-response");
+    responseArea.value = "Loading...";
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "https://kilogateway.vercel.app/v1/chat/completions", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Authorization", "Bearer " + apiKey);
+    var requestData = {
+        model: model,
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: parseInt(tokens)
+    };
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    responseArea.value = JSON.stringify(data, null, 2);
+                    var content = "";
+                    if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+                        content = data.choices[0].message.content;
+                    } else {
+                        content = "No content found";
+                    }
+                    document.getElementById("content-output").innerHTML = content.replace(/\n/g, "<br>");
+                } catch (e) {
+                    responseArea.value = "Error: " + e.message;
+                }
+            } else {
+                responseArea.value = "Error: " + xhr.status;
+            }
+        }
+    };
+    xhr.send(JSON.stringify(requestData));
+}
+function clearResponse() {
+    document.getElementById("curl-response").value = "";
+    document.getElementById("content-output").innerHTML = "Klik Test cURL";
+}
+setTimeout(updateCurl, 100);
+    </script>
 </body>
 </html>"""
 
@@ -672,16 +742,6 @@ def parse_model(model: str) -> tuple[str, str]:
 @app.get("/")
 async def root():
     return HTMLResponse(content=HTML_DASHBOARD, status_code=200)
-
-@app.get("/dashboard.js")
-async def dashboard_js():
-    try:
-        import os
-        js_path = os.path.join(os.path.dirname(__file__), "..", "public", "dashboard.js")
-        with open(js_path, "r") as f:
-            return Response(content=f.read(), media_type="application/javascript")
-    except Exception as e:
-        return Response(content=f"// Error loading dashboard.js: {e}", media_type="application/javascript")
 
 @app.get("/health")
 async def health():
