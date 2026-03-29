@@ -92,9 +92,16 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             <label>cURL Command</label>
             <textarea id="curl-output" readonly></textarea>
             <button class="btn" onclick="copyText('curl-output')">Copy cURL</button>
+            <button class="btn" onclick="testCurl()" style="background: #00ff88; color: #000;">Test cURL</button>
             <button class="btn btn-secondary" onclick="copyText('curl-stream')">Copy Streaming</button>
             <button class="btn btn-secondary" onclick="copyText('python-code')">Copy Python</button>
             <p class="copy-msg" id="copy-msg">Copied!</p>
+        </div>
+        <div class="card">
+            <h2>Test cURL Response</h2>
+            <label>Response</label>
+            <textarea id="curl-response" readonly placeholder="Klik 'Test cURL' untuk melihat response..."></textarea>
+            <button class="btn btn-secondary" onclick="clearResponse()">Clear</button>
         </div>
         <div class="card">
             <h2>Streaming cURL</h2>
@@ -137,6 +144,35 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             const msg = document.getElementById('copy-msg');
             msg.style.display = 'block';
             setTimeout(() => msg.style.display = 'none', 2000);
+        }
+        function testCurl() {
+            const model = document.getElementById('model-select').value || "minimax/minimax-m2.5:free";
+            const prompt = document.getElementById('prompt-input').value || "Hello";
+            const tokens = document.getElementById('max-tokens').value || "200";
+            const responseArea = document.getElementById('curl-response');
+            responseArea.value = "Loading...";
+            fetch(BASE + "/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer " + API_KEY,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: model,
+                    messages: [{ role: "user", content: prompt }],
+                    max_tokens: parseInt(tokens)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                responseArea.value = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                responseArea.value = "Error: " + error.message;
+            });
+        }
+        function clearResponse() {
+            document.getElementById('curl-response').value = "";
         }
         updateCurl();
     </script>
