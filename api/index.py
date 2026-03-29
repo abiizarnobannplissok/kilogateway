@@ -142,7 +142,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             const model = document.getElementById('model-select').value || "minimax/minimax-m2.5:free";
             const prompt = document.getElementById('prompt-input').value || "Hello";
             const tokens = document.getElementById('max-tokens').value || "65536";
-            const escaped = prompt.replace(/'/g, "\\'").replace(/"/g, '\\"');
+            const escaped = prompt.replace(/'/g, "\\\\'").replace(/"/g, '\\\\"');
             const curlCmd = `curl ${BASE}/chat/completions \\
   -H "Authorization: Bearer ${API_KEY}" \\
   -H "Content-Type: application/json" \\
