@@ -48,6 +48,10 @@ HTML_DASHBOARD = """<!DOCTYPE html>
         .info p { margin-bottom: 8px; font-size: 14px; }
         .info strong { color: #00d4ff; }
         .copy-msg { color: #00ff88; font-size: 12px; margin-top: 8px; display: none; }
+        .content-output { background: #0f0f1a; border: 1px solid #333; border-radius: 8px; padding: 20px; min-height: 200px; font-size: 15px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; color: #e0e0e0; }
+        .content-output strong { color: #00d4ff; font-weight: bold; }
+        .content-output em { color: #00ff88; font-style: italic; }
+        .content-output code { background: #1a1a2e; padding: 2px 6px; border-radius: 4px; font-family: 'Courier New', monospace; color: #ff6b6b; }
     </style>
 </head>
 <body>
@@ -102,6 +106,10 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             <label>Response</label>
             <textarea id="curl-response" readonly placeholder="Klik 'Test cURL' untuk melihat response..."></textarea>
             <button class="btn btn-secondary" onclick="clearResponse()">Clear</button>
+        </div>
+        <div class="card">
+            <h2>Content</h2>
+            <div id="content-output" class="content-output">Klik 'Test cURL' untuk melihat konten...</div>
         </div>
         <div class="card">
             <h2>Streaming cURL</h2>
@@ -166,13 +174,40 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             .then(response => response.json())
             .then(data => {
                 responseArea.value = JSON.stringify(data, null, 2);
+                
+                let content = "";
+                try {
+                    if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+                        content = data.choices[0].message.content;
+                    } else {
+                        content = "No content found in response";
+                    }
+                } catch (e) {
+                    content = "Error parsing content: " + e.message;
+                }
+                
+                const contentOutput = document.getElementById('content-output');
+                contentOutput.innerHTML = formatContent(content);
             })
             .catch(error => {
                 responseArea.value = "Error: " + error.message;
+                document.getElementById('content-output').innerHTML = "Error: " + error.message;
             });
+        }
+        function formatContent(text) {
+            let html = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/\n/g, '<br>');
+            return html;
         }
         function clearResponse() {
             document.getElementById('curl-response').value = "";
+            document.getElementById('content-output').innerHTML = "Klik 'Test cURL' untuk melihat konten...";
         }
         updateCurl();
     </script>
