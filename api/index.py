@@ -15,6 +15,7 @@ from typing import List, Optional, Dict, Any, Generator
 from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
+import httpx
 
 # ============================================================================
 # Configuration
@@ -539,7 +540,7 @@ def verify_api_key(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Missing Authorization header")
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid Authorization format. Use: Bearer <api-key>")
-    return True
+    return authorization.replace("Bearer ", "")
 
 def parse_model(model: str) -> tuple[str, str]:
     parts = model.split("/")
@@ -548,17 +549,6 @@ def parse_model(model: str) -> tuple[str, str]:
     provider = parts[0]
     actual_model = "/".join(parts[1:])
     return provider, actual_model
-
-def generate_response_content(model: str, messages: List[Message]) -> str:
-    user_content = ""
-    for msg in messages:
-        if msg.role == "user":
-            user_content = msg.content
-            break
-    return f"Response from {model}. Received: {user_content[:50]}..."
-
-def count_tokens(text: str) -> int:
-    return len(text) // 4
 
 # ============================================================================
 # API Endpoints
@@ -601,63 +591,53 @@ async def chat_completions(
     authorization: Optional[str] = Header(None)
 ):
     start_time = time.time()
-    verify_api_key(authorization)
+    api_key = verify_api_key(authorization)
     provider, actual_model = parse_model(request.model)
-    content = generate_response_content(request.model, request.messages)
     
-    if request.stream:
-        return StreamingResponse(
-            stream_response(request.model, content, request.messages),
-            media_type="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "X-Request-ID": str(uuid.uuid4())
-            }
-        )
-    
-    prompt_tokens = sum(count_tokens(m.content) for m in request.messages)
-    completion_tokens = count_tokens(content)
-    
-    return {
-        "id": f"chatcmpl-{uuid.uuid4().hex[:8]}",
-        "object": "chat.completion",
-        "created": int(datetime.now().timestamp()),
-        "model": request.model,
-        "choices": [
-            {
-                "index": 0,
-                "message": {
-                    "role": "assistant",
-                    "content": content
+    # Call real Kilo Gateway API
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                "https://api.kilo.ai/api/gateway/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
                 },
-                "finish_reason": "stop"
-            }
-        ],
-        "usage": {
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "total_tokens": prompt_tokens + completion_tokens
-        },
-        "provider": provider,
-        "latency_ms": int((time.time() - start_time) * 1000)
-    }
+                json={
+                    "model": request.model,
+                    "messages": [{"role": m.role, "content": m.content} for m in request.messages],
+                    "max_tokens": request.max_tokens,
+                    "temperature": request.temperature,
+                    "stream": request.stream
+                },
+                timeout=60.0
+            )
+            
+            if response.status_code != 200:
+                error_detail = response.text
+                raise HTTPException(status_code=response.status_code, detail=f"API Error: {error_detail}")
+            
+            if request.stream:
+                return StreamingResponse(
+                    stream_response_from_api(response),
+                    media_type="text/event-stream",
+                    headers={
+                        "Cache-Control": "no-cache",
+                        "Connection": "keep-alive",
+                        "X-Request-ID": str(uuid.uuid4())
+                    }
+                )
+            
+            return response.json()
+            
+        except httpx.TimeoutException:
+            raise HTTPException(status_code=504, detail="Request timeout")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
-async def stream_response(model: str, content: str, messages: List[Message]) -> Generator[str, None, None]:
-    import asyncio
-    request_id = f"chatcmpl-{uuid.uuid4().hex[:8]}"
-    created = int(datetime.now().timestamp())
-    
-    yield f"data: {json.dumps({'id': request_id, 'object': 'chat.completion.chunk', 'created': created, 'model': model, 'choices': [{'index': 0, 'delta': {'role': 'assistant'}, 'finish_reason': None}]})}\n\n"
-    
-    words = content.split()
-    for i, word in enumerate(words):
-        chunk_content = word + (" " if i < len(words) - 1 else "")
-        yield f"data: {json.dumps({'id': request_id, 'object': 'chat.completion.chunk', 'created': created, 'model': model, 'choices': [{'index': 0, 'delta': {'content': chunk_content}, 'finish_reason': None}]})}\n\n"
-        await asyncio.sleep(0.05)
-    
-    yield f"data: {json.dumps({'id': request_id, 'object': 'chat.completion.chunk', 'created': created, 'model': model, 'choices': [{'index': 0, 'delta': {}, 'finish_reason': 'stop'}]})}\n\n"
-    yield "data: [DONE]\n\n"
+async def stream_response_from_api(response) -> Generator[str, None, None]:
+    async for chunk in response.aiter_text():
+        yield chunk
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
