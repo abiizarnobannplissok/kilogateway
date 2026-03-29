@@ -202,14 +202,22 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             });
         }
         function formatContent(text) {
-            var html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\*(.*?)\*/g, "<em>$1</em>").replace(/`(.*?)`/g, "<code>$1</code>").replace(/\n/g, "<br>");
+            if (!text) return "";
+            var html = text;
+            html = html.replace(/&/g, "&amp;");
+            html = html.replace(/</g, "&lt;");
+            html = html.replace(/>/g, "&gt;");
+            html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+            html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
+            html = html.replace(/`(.*?)`/g, "<code>$1</code>");
+            html = html.replace(/\n/g, "<br>");
             return html;
         }
         function clearResponse() {
             document.getElementById("curl-response").value = "";
             document.getElementById("content-output").innerHTML = "Klik 'Test cURL' untuk melihat konten...";
         }
-        window.onload = function() { updateCurl(); };
+        setTimeout(updateCurl, 100);
     </script>
 </body>
 </html>"""
@@ -786,13 +794,17 @@ async def chat_completions(
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json"
                 },
-                json={
+                json_payload={
                     "model": request.model,
                     "messages": [{"role": m.role, "content": m.content} for m in request.messages],
                     "max_tokens": request.max_tokens,
                     "temperature": request.temperature,
                     "stream": request.stream
-                },
+                }
+                if request.tools:
+                    json_payload["tools"] = request.tools
+                if request.tool_choice:
+                    json_payload["tool_choice"] = request.tool_choice
                 timeout=60.0
             )
             
