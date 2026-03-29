@@ -138,15 +138,16 @@ HTML_DASHBOARD = """<!DOCTYPE html>
     <script>
 var API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
 var BASE_URL = "https://kilogateway.vercel.app/v1";
+var NL = "\n";
 function updateCurl() {
     var model = document.getElementById("model-select").value || "minimax/minimax-m2.5:free";
     var prompt = document.getElementById("prompt-input").value || "hi";
     var tokens = document.getElementById("max-tokens").value || "65536";
     var bodyData = JSON.stringify({model: model, messages: [{role: "user", content: prompt}], max_tokens: parseInt(tokens)});
     var bodyStream = JSON.stringify({model: model, messages: [{role: "user", content: prompt}], stream: true});
-    var curlCmd = "curl " + BASE_URL + "/chat/completions \n  -H 'Authorization: Bearer " + API_KEY + "' \n  -H 'Content-Type: application/json' \n  -d '" + bodyData + "'";
-    var curlStream = "curl " + BASE_URL + "/chat/completions \n  -H 'Authorization: Bearer " + API_KEY + "' \n  -H 'Content-Type: application/json' \n  -d '" + bodyStream + "'";
-    var pythonCode = "from openai import OpenAI\n\nclient = OpenAI(\n    api_key='" + API_KEY + "',\n    base_url='" + BASE_URL + "'\n)\n\nresponse = client.chat.completions.create(\n    model='" + model + "',\n    messages=[{'role': 'user', 'content': '" + prompt.replace(/'/g, "\\'") + "'}]\n)\nprint(response.choices[0].message.content)";
+    var curlCmd = "curl " + BASE_URL + "/chat/completions" + NL + "  -H 'Authorization: Bearer " + API_KEY + "'" + NL + "  -H 'Content-Type: application/json'" + NL + "  -d '" + bodyData + "'";
+    var curlStream = "curl " + BASE_URL + "/chat/completions" + NL + "  -H 'Authorization: Bearer " + API_KEY + "'" + NL + "  -H 'Content-Type: application/json'" + NL + "  -d '" + bodyStream + "'";
+    var pythonCode = "from openai import OpenAI" + NL + NL + "client = OpenAI(" + NL + "    api_key='" + API_KEY + "'," + NL + "    base_url='" + BASE_URL + "'" + NL + ")" + NL + NL + "response = client.chat.completions.create(" + NL + "    model='" + model + "'," + NL + "    messages=[{'role': 'user', 'content': '" + prompt.replace(/'/g, "\\'") + "'}]" + NL + ")" + NL + "print(response.choices[0].message.content)";
     document.getElementById("curl-output").value = curlCmd;
     document.getElementById("curl-stream").value = curlStream;
     document.getElementById("python-code").value = pythonCode;
