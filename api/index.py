@@ -120,7 +120,7 @@ var BASE_URL = "https://kilogateway.vercel.app/v1";
 var NL = String.fromCharCode(10);
 function loadFreeModels() {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", BASE_URL + "/free-models", true);
+    xhr.open("GET", "/free-models", true);
     xhr.timeout = 10000; // 10 seconds timeout
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
