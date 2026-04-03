@@ -121,28 +121,42 @@ var NL = String.fromCharCode(10);
 function loadFreeModels() {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", BASE_URL + "/free-models", true);
+    xhr.timeout = 10000; // 10 seconds timeout
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
-                var data = JSON.parse(xhr.responseText);
-                var select = document.getElementById("model-select");
-                select.innerHTML = "";
-                if (data.models && data.models.length > 0) {
-                    for (var i = 0; i < data.models.length; i++) {
-                        var opt = document.createElement("option");
-                        opt.value = data.models[i].id;
-                        opt.text = data.models[i].name;
-                        if (i === 0) opt.selected = true;
-                        select.appendChild(opt);
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    var select = document.getElementById("model-select");
+                    select.innerHTML = "";
+                    if (data.models && data.models.length > 0) {
+                        for (var i = 0; i < data.models.length; i++) {
+                            var opt = document.createElement("option");
+                            opt.value = data.models[i].id;
+                            opt.text = data.models[i].name;
+                            if (i === 0) opt.selected = true;
+                            select.appendChild(opt);
+                        }
+                        updateCurl();
+                    } else {
+                        select.innerHTML = '<option value="">No free models available</option>';
                     }
-                    updateCurl();
-                } else {
-                    select.innerHTML = '<option value="">No free models available</option>';
+                } catch (e) {
+                    select.innerHTML = '<option value="">Error parsing models</option>';
+                    console.error("JSON parse error:", e);
                 }
             } else {
-                select.innerHTML = '<option value="">Error loading models</option>';
+                select.innerHTML = '<option value="">Error loading models (HTTP ' + xhr.status + ')</option>';
             }
         }
+    };
+    xhr.onerror = function() {
+        select.innerHTML = '<option value="">Network error</option>';
+        console.error("XHR error");
+    };
+    xhr.ontimeout = function() {
+        select.innerHTML = '<option value="">Request timeout</option>';
+        console.error("XHR timeout");
     };
     xhr.send();
 }
