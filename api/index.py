@@ -66,13 +66,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             <h2>Copy cURL Command</h2>
             <label>Pilih Model</label>
             <select id="model-select" onchange="updateCurl()">
-                <option value="minimax/minimax-m2.5:free" selected>MiniMax M2.5 (Free)</option>
-                <option value="xiaomi/mimo-v2-pro:free">Xiaomi MiMo V2 Pro (Free)</option>
-                <option value="xiaomi/mimo-v2-omni:free">Xiaomi MiMo V2 Omni (Free)</option>
-                <option value="x-ai/grok-code-fast-1:optimized:free">Grok Code Fast 1 (Free)</option>
-                <option value="stepfun/step-3.5-flash:free">StepFun 3.5 Flash (Free)</option>
-                <option value="nvidia/nemotron-3-super-120b-a12b:free">NVIDIA Nemotron 3 Super (Free)</option>
-                <option value="arcee-ai/trinity-large-preview:free">Arcee Trinity Large (Free)</option>
+                <option value="">Loading free models...</option>
             </select>
             <label>Input Prompt</label>
             <textarea id="prompt-input" oninput="updateCurl()">hi</textarea>
@@ -124,6 +118,34 @@ HTML_DASHBOARD = """<!DOCTYPE html>
 var API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
 var BASE_URL = "https://kilogateway.vercel.app/v1";
 var NL = String.fromCharCode(10);
+function loadFreeModels() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", BASE_URL + "/free-models", true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                var data = JSON.parse(xhr.responseText);
+                var select = document.getElementById("model-select");
+                select.innerHTML = "";
+                if (data.models && data.models.length > 0) {
+                    for (var i = 0; i < data.models.length; i++) {
+                        var opt = document.createElement("option");
+                        opt.value = data.models[i].id;
+                        opt.text = data.models[i].name;
+                        if (i === 0) opt.selected = true;
+                        select.appendChild(opt);
+                    }
+                    updateCurl();
+                } else {
+                    select.innerHTML = '<option value="">No free models available</option>';
+                }
+            } else {
+                select.innerHTML = '<option value="">Error loading models</option>';
+            }
+        }
+    };
+    xhr.send();
+}
 function updateCurl() {
     var model = document.getElementById("model-select").value || "minimax/minimax-m2.5:free";
     var prompt = document.getElementById("prompt-input").value || "hi";
@@ -176,7 +198,7 @@ function clearResponse() {
     document.getElementById("curl-response").value = "";
     document.getElementById("content-output").innerHTML = "Klik Test cURL";
 }
-setTimeout(updateCurl, 100);
+setTimeout(loadFreeModels, 100);
     </script>
 </body>
 </html>"""
