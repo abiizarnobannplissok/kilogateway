@@ -66,28 +66,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             <h2>Copy cURL Command</h2>
             <label>Pilih Model</label>
             <select id="model-select" onchange="updateCurl()">
-                <optgroup label="FREE Models">
-                    <option value="minimax/minimax-m2.5:free" selected>MiniMax M2.5 (Free)</option>
-                    <option value="xiaomi/mimo-v2-pro:free">Xiaomi MiMo V2 Pro (Free)</option>
-                    <option value="xiaomi/mimo-v2-omni:free">Xiaomi MiMo V2 Omni (Free)</option>
-                    <option value="x-ai/grok-code-fast-1:optimized:free">Grok Code Fast 1 (Free)</option>
-                    <option value="stepfun/step-3.5-flash:free">StepFun 3.5 Flash (Free)</option>
-                    <option value="nvidia/nemotron-3-super-120b-a12b:free">NVIDIA Nemotron 3 Super (Free)</option>
-                    <option value="arcee-ai/trinity-large-preview:free">Arcee Trinity Large (Free)</option>
-                </optgroup>
-                <optgroup label="Popular Models">
-                    <option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
-                    <option value="anthropic/claude-opus-4">Claude Opus 4</option>
-                    <option value="openai/gpt-5">GPT-5</option>
-                    <option value="openai/gpt-5-mini">GPT-5 Mini</option>
-                    <option value="openai/gpt-4o">GPT-4o</option>
-                    <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
-                    <option value="deepseek/deepseek-chat">DeepSeek Chat</option>
-                    <option value="qwen/qwen3-coder">Qwen3 Coder</option>
-                    <option value="x-ai/grok-3">Grok 3</option>
-                    <option value="moonshotai/kimi-k2.5">Kimi K2.5</option>
-                    <option value="z-ai/glm-5">GLM 5</option>
-                </optgroup>
+                <option value="">Loading free models...</option>
             </select>
             <label>Input Prompt</label>
             <textarea id="prompt-input" oninput="updateCurl()">hi</textarea>
@@ -139,6 +118,30 @@ HTML_DASHBOARD = """<!DOCTYPE html>
 var API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
 var BASE_URL = "https://kilogateway.vercel.app/v1";
 var NL = String.fromCharCode(10);
+function loadFreeModels() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", BASE_URL + "/free-models", true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            var data = JSON.parse(xhr.responseText);
+            var select = document.getElementById("model-select");
+            select.innerHTML = "";
+            if (data.models && data.models.length > 0) {
+                for (var i = 0; i < data.models.length; i++) {
+                    var opt = document.createElement("option");
+                    opt.value = data.models[i].id;
+                    opt.text = data.models[i].name;
+                    if (i === 0) opt.selected = true;
+                    select.appendChild(opt);
+                }
+                updateCurl();
+            } else {
+                select.innerHTML = "<option value=\"\">No free models available</option>";
+            }
+        }
+    };
+    xhr.send();
+}
 function updateCurl() {
     var model = document.getElementById("model-select").value || "minimax/minimax-m2.5:free";
     var prompt = document.getElementById("prompt-input").value || "hi";
@@ -191,7 +194,7 @@ function clearResponse() {
     document.getElementById("curl-response").value = "";
     document.getElementById("content-output").innerHTML = "Klik Test cURL";
 }
-setTimeout(updateCurl, 100);
+setTimeout(loadFreeModels, 100);
     </script>
 </body>
 </html>"""
@@ -734,6 +737,30 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+@app.get("/free-models")
+async def list_free_models():
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.kilo.ai/api/gateway/models",
+                timeout=30.0
+            )
+            if response.status_code != 200:
+                return {"error": "Failed to fetch models", "models": []}
+            
+            data = response.json()
+            free_models = [
+                {
+                    "id": m["id"],
+                    "name": m.get("name", m["id"])
+                }
+                for m in data.get("data", [])
+                if m.get("isFree") == True
+            ]
+            return {"models": free_models}
+    except Exception as e:
+        return {"error": str(e), "models": []}
 
 @app.get("/v1/models", response_model=Dict)
 async def list_models(authorization: Optional[str] = Header(None)):
