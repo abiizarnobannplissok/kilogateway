@@ -100,14 +100,8 @@ HTML_DASHBOARD = """<!DOCTYPE html>
         </div>
         <div class="card">
             <h2>Daftar Model Free</h2>
-            <ul style="list-style: none; line-height: 2;">
-                <li><code>minimax/minimax-m2.5:free</code> - MiniMax M2.5</li>
-                <li><code>xiaomi/mimo-v2-pro:free</code> - Xiaomi MiMo V2 Pro</li>
-                <li><code>xiaomi/mimo-v2-omni:free</code> - Xiaomi MiMo V2 Omni</li>
-                <li><code>x-ai/grok-code-fast-1:optimized:free</code> - Grok Code Fast 1</li>
-                <li><code>stepfun/step-3.5-flash:free</code> - StepFun 3.5 Flash</li>
-                <li><code>nvidia/nemotron-3-super-120b-a12b:free</code> - NVIDIA Nemotron 3 Super</li>
-                <li><code>arcee-ai/trinity-large-preview:free</code> - Arcee Trinity Large</li>
+            <ul id="free-models-list" style="list-style: none; line-height: 2;">
+                <li>Loading...</li>
             </ul>
         </div>
         <footer style="text-align: center; color: #666; margin-top: 40px; padding: 20px;">

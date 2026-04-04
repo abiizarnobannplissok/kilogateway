@@ -43,30 +43,7 @@
             <div class="model-group">
                 <label>Pilih Model</label>
                 <select id="model-select" onchange="updateCurl()">
-                    <option value="">-- Pilih Model --</option>
-                    <optgroup label="🆓 FREE Models">
-                        <option value="minimax/minimax-m2.5:free" selected>MiniMax M2.5 (Free)</option>
-                        <option value="xiaomi/mimo-v2-pro:free">Xiaomi MiMo V2 Pro (Free)</option>
-                        <option value="xiaomi/mimo-v2-omni:free">Xiaomi MiMo V2 Omni (Free)</option>
-                        <option value="x-ai/grok-code-fast-1:optimized:free">Grok Code Fast 1 (Free)</option>
-                        <option value="stepfun/step-3.5-flash:free">StepFun 3.5 Flash (Free)</option>
-                        <option value="nvidia/nemotron-3-super-120b-a12b:free">NVIDIA Nemotron 3 Super (Free)</option>
-                        <option value="arcee-ai/trinity-large-preview:free">Arcee Trinity Large (Free)</option>
-                    </optgroup>
-                    <optgroup label="💎 Popular Models">
-                        <option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
-                        <option value="anthropic/claude-opus-4">Claude Opus 4</option>
-                        <option value="openai/gpt-5">GPT-5</option>
-                        <option value="openai/gpt-5-mini">GPT-5 Mini</option>
-                        <option value="openai/gpt-4o">GPT-4o</option>
-                        <option value="openai/o3">OpenAI o3</option>
-                        <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
-                        <option value="deepseek/deepseek-chat">DeepSeek Chat</option>
-                        <option value="qwen/qwen3-coder">Qwen3 Coder</option>
-                        <option value="x-ai/grok-3">Grok 3</option>
-                        <option value="moonshotai/kimi-k2.5">Kimi K2.5</option>
-                        <option value="z-ai/glm-5">GLM 5</option>
-                    </optgroup>
+                    <option value="">Loading free models...</option>
                 </select>
             </div>
 
@@ -114,14 +91,8 @@ print(response.choices[0].message.content)</textarea>
 
         <div class="card">
             <h2>🆓 Daftar Model Free</h2>
-            <ul style="list-style: none; line-height: 2;">
-                <li><code>minimax/minimax-m2.5:free</code> - MiniMax M2.5</li>
-                <li><code>xiaomi/mimo-v2-pro:free</code> - Xiaomi MiMo V2 Pro</li>
-                <li><code>xiaomi/mimo-v2-omni:free</code> - Xiaomi MiMo V2 Omni</li>
-                <li><code>x-ai/grok-code-fast-1:optimized:free</code> - Grok Code Fast 1</li>
-                <li><code>stepfun/step-3.5-flash:free</code> - StepFun 3.5 Flash</li>
-                <li><code>nvidia/nemotron-3-super-120b-a12b:free</code> - NVIDIA Nemotron 3 Super</li>
-                <li><code>arcee-ai/trinity-large-preview:free</code> - Arcee Trinity Large</li>
+            <ul id="free-models-list" style="list-style: none; line-height: 2;">
+                <li>Loading...</li>
             </ul>
         </div>
 
@@ -133,6 +104,63 @@ print(response.choices[0].message.content)</textarea>
     <script>
         const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJwcm9kdWN0aW9uIiwia2lsb1VzZXJJZCI6IjhmYThhNmIwLTdkMWMtNDc0NC1hZjFiLWM3NmQ0NTMwMDBlOSIsImFwaVRva2VuUGVwcGVyIjpudWxsLCJ2ZXJzaW9uIjozLCJpYXQiOjE3NzQ3NzM5OTIsImV4cCI6MTkzMjQ1Mzk5Mn0.1XnFeHSpXJzb4-dN0VTJTc3dyz_hGvxiW8Krm54AUNQ";
         const BASE_URL = "https://kilogateway.vercel.app/v1";
+        
+        function loadFreeModels() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/free-models", true);
+            xhr.timeout = 10000; // 10 seconds timeout
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            var select = document.getElementById("model-select");
+                            select.innerHTML = "";
+                            if (data.models && data.models.length > 0) {
+                                for (var i = 0; i < data.models.length; i++) {
+                                    var opt = document.createElement("option");
+                                    opt.value = data.models[i].id;
+                                    opt.text = data.models[i].name;
+                                    if (i === 0) opt.selected = true;
+                                    select.appendChild(opt);
+                                }
+                                updateFreeModelsList(data);
+                                updateCurl();
+                            } else {
+                                select.innerHTML = '<option value="">No free models available</option>';
+                            }
+                        } catch (e) {
+                            select.innerHTML = '<option value="">Error parsing models</option>';
+                            console.error("JSON parse error:", e);
+                        }
+                    } else {
+                        select.innerHTML = '<option value="">Error loading models (HTTP ' + xhr.status + ')</option>';
+                    }
+                }
+            };
+            xhr.onerror = function() {
+                document.getElementById("model-select").innerHTML = '<option value="">Network error</option>';
+                console.error("XHR error");
+            };
+            xhr.ontimeout = function() {
+                document.getElementById("model-select").innerHTML = '<option value="">Request timeout</option>';
+                console.error("XHR timeout");
+            };
+            xhr.send();
+        }
+
+        function updateFreeModelsList(data) {
+            var list = document.getElementById("free-models-list");
+            if (data.models && data.models.length > 0) {
+                var html = "";
+                for (var i = 0; i < data.models.length; i++) {
+                    html += '<li><code>' + data.models[i].id + '</code> - ' + data.models[i].name + '</li>';
+                }
+                list.innerHTML = html;
+            } else {
+                list.innerHTML = '<li>No free models available</li>';
+            }
+        }
 
         function updateCurl() {
             const model = document.getElementById('model-select').value || "minimax/minimax-m2.5:free";
@@ -191,13 +219,16 @@ print(response.choices[0].message.content)`;
         }
 
         function resetForm() {
-            document.getElementById('model-select').value = 'minimax/minimax-m2.5:free';
+            var select = document.getElementById("model-select");
+            if (select.options.length > 0) {
+                select.selectedIndex = 0;
+            }
             document.getElementById('prompt-input').value = 'apa itu UTBK?';
             document.getElementById('max-tokens').value = '200';
             updateCurl();
         }
 
-        updateCurl();
+        setTimeout(loadFreeModels, 100);
     </script>
 </body>
 </html>
